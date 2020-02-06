@@ -14,15 +14,15 @@ import (
 type Mode int
 
 const (
-	combo Mode = iota
-	triangle
-	rect
-	ellipse
-	circle
-	rotatedrect
-	beziers
-	rotatedellipse
-	polygon
+	ModeCombo Mode = iota
+	ModeTriangle
+	ModeRect
+	ModeEllipse
+	ModeCircle
+	ModeRotatedRect
+	ModeBeziers
+	ModeRotatedEllipse
+	ModePolygon
 )
 
 // option for the transform function
@@ -35,6 +35,10 @@ func WithMode(mode Mode) func() []string {
 // will take the provided image and apply primitive 
 // tranformation and return a reader to the resulting image
 func Transform(image io.Reader, ext string, numShapes int, opts ...func() []string) (io.Reader, error) {
+	var args []string
+	for _, opt := range opts {
+		args = append(args, opt()...)
+	}
 	in, err := tempfile("in_", ext)
 	if err != nil {
 		return nil, errors.New("primitive: failed to create temporary input file")
@@ -52,7 +56,7 @@ func Transform(image io.Reader, ext string, numShapes int, opts ...func() []stri
 		return nil, errors.New("primitive: failed to copy input to temp input file")
 	}
 	// run primitive w/ -i in.Name() -o out.Name()
-	stdCombo, err := primitive(in.Name(), out.Name(), numShapes, combo)
+	stdCombo, err := primitive(in.Name(), out.Name(), numShapes, args...)
 	if err != nil {
 		return nil, errors.New("primitive: failed to run primitive on input")
 	}
@@ -67,9 +71,10 @@ func Transform(image io.Reader, ext string, numShapes int, opts ...func() []stri
 	return b, nil
 }
 
-func primitive(inputFile, outputFile string, numShapes int, mode Mode) (string, error) {
-	argStr := fmt.Sprintf("-i %s -o %s -n %d -m %d", inputFile, outputFile, numShapes, mode)
-	cmd := exec.Command("primitive", strings.Fields(argStr)...)
+func primitive(inputFile, outputFile string, numShapes int, args ...string) (string, error) {
+	argStr := fmt.Sprintf("-i %s -o %s -n %d", inputFile, outputFile, numShapes)
+	args = append(strings.Fields(argStr), args...)
+	cmd := exec.Command("primitive", args...)
 	b, err := cmd.CombinedOutput()
 	return string(b), err
 }
