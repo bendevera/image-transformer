@@ -1,0 +1,13 @@
+<html>
+<body>
+    <h1>Results</h1>
+    <ul>
+    {{range .}}
+        <li>
+            <p>{{.Mode}}</p>
+            <img src="/{{.Path}}" />
+        </li>
+    {{end}}
+    </ul>
+</body>
+</html>
